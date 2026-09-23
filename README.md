@@ -318,3 +318,95 @@ This is a tool built with Tauri 2 + Vue 3 for managing multiple OpenAI Codex des
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## Hướng dẫn cài đặt và chạy thử (Quick Start Tiếng Việt)
+
+### 1. Cài đặt môi trường Go
+Dự án yêu cầu **Go 1.23+** (khuyến nghị 1.24 hoặc 1.26). Trên Windows, bạn có thể cài nhanh bằng `winget` qua PowerShell:
+```powershell
+winget install GoLang.Go
+```
+*Lưu ý:* Sau khi cài đặt xong, hãy mở lại cửa sổ PowerShell mới để nhận diện lệnh `go` và kiểm tra lại bằng:
+```powershell
+go version
+```
+
+### 2. Tạo file cấu hình `config.yaml`
+Tạo file `config.yaml` tại thư mục gốc của project:
+```powershell
+New-Item -Path "config.yaml" -ItemType File -Value @"
+host: "127.0.0.1"
+port: 8317
+
+# Khóa API để bảo vệ proxy cục bộ
+api-keys:
+  - "my-local-secret-key"
+
+debug: true
+commercial-mode: false
+"@
+```
+*(Lưu ý: Tránh giữ nguyên chuỗi mẫu `"your-api-key-1"` từ file ví dụ để không bị Safe Mode kích hoạt).*
+
+### 3. Khởi chạy thử nghiệm
+Chạy trực tiếp từ mã nguồn:
+```powershell
+go run ./cmd/server --local-model
+```
+Hoặc biên dịch ra file `.exe`:
+```powershell
+go build -o cli-proxy-api.exe ./cmd/server
+.\cli-proxy-api.exe --local-model
+```
+
+### 4. Kiểm tra trạng thái hoạt động (Health Check)
+Mở một cửa sổ PowerShell khác và kiểm tra endpoint:
+```powershell
+curl.exe -i http://127.0.0.1:8317/healthz
+```
+Nếu nhận phản hồi `HTTP/1.1 200 OK` với `{"status":"ok"}` nghĩa là proxy đã sẵn sàng nhận kết nối.
+
+### 5. Cấu hình Provider thực tế
+- **Đăng nhập qua OAuth (OpenAI Codex / Claude Code):**
+  ```powershell
+  # Đăng nhập Codex (ChatGPT)
+  .\cli-proxy-api.exe -codex-login
+
+  # Hoặc đăng nhập Claude
+  .\cli-proxy-api.exe -claude-login
+  ```
+- **Hoặc thêm API Key trực tiếp trong `config.yaml`:**
+  ```yaml
+  # Google Gemini:
+  gemini-api-key:
+    - api-key: "AIzaSy..."
+
+  # Anthropic Claude:
+  claude-api-key:
+    - api-key: "sk-ant-..."
+
+  # Custom OpenAI-compatible (DeepSeek / OpenRouter):
+  openai-compatibility:
+    - name: "deepseek"
+      base-url: "https://api.deepseek.com/v1"
+      api-key-entries:
+        - api-key: "sk-..."
+      models:
+        - name: "deepseek-chat"
+  ```
+
+### 6. Gọi thử nghiệm API Chat
+Gửi yêu cầu kiểm tra tương thích OpenAI API:
+```powershell
+curl.exe -X POST http://127.0.0.1:8317/v1/chat/completions `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer my-local-secret-key" `
+  -d '{
+    "model": "gemini-2.5-flash",
+    "messages": [
+      {"role": "user", "content": "Xin chào! Bạn là model nào?"}
+    ]
+  }'
+```
